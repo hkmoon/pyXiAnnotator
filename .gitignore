@@ -1,0 +1,8 @@
+\.idea/
+build/
+pyxiannotator\.egg-info/
+pyXiAnnotator\.egg-info/
+
+dist/
+
+\.directory
