@@ -442,7 +442,8 @@ class MzSpeciesTarget(MzSpecies):
 
     def match(self, mz, mz_tolerance, charge, rt, rt_delta=0):
         """
-        matches the MzSpeciesTarget against a spectrum
+        matches the MzSpeciesTarget against a spectrum, ignores charge state requirement if
+        charge is 0 (unassigned).
         :param mz: precursor mz
         :param mz_tolerance: mz matching tolerance
         :param charge: precursor charge state
@@ -450,7 +451,7 @@ class MzSpeciesTarget(MzSpecies):
         :param rt_delta: rt error
         :return: True or False
         """
-        if int(charge) != self.charge:
+        if int(charge) != 0 and int(charge) != self.charge:
             return False
 
         rt_lo = self.rt_start - rt_delta
