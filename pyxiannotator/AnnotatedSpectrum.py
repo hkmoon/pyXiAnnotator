@@ -632,7 +632,7 @@ class Fragment:
         try:
             return peak_int / precursor_int
         except ZeroDivisionError:
-            return math.inf
+            return float('inf')
 
     def get_intensity_ratio(self, deisotoped=False):
         """
