@@ -550,11 +550,8 @@ class Fragment:
             return self.name[0]
         if re.search('P_dsso_[AST]', self.name):
             return 'dsso'
-        if re.search('P_uvpd_[ABCD]', self.name):
-            return 'uvpd'
-        # uvpd_match = re.search('P_uvpd_(.*)', self.name)
-        # if uvpd_match:
-        #     return 'uvpd_{}'.format(uvpd_match.groups()[0])
+        if re.search('P_ucl_[ABCD]', self.name):
+            return 'ucl'
         if self.name.startswith('P+P'):
             return 'Precursor'
         if self.name.startswith('P'):
