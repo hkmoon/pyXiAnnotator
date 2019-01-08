@@ -180,6 +180,8 @@ class XiAnnotatorLocal(XiAnnotatorSuper):
         :return: annotation response JSON
         """
 
+        self.last_request = json_request
+
         response = self.annotator.getFullAnnotation(self.JString(json_request)).getEntity()
         json_response = json.loads(response)
 
