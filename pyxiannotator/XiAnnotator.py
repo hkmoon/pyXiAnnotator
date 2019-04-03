@@ -69,6 +69,8 @@ class XiAnnotatorSuper:
         all_mods = []
 
         # peptides block
+        peptides = []
+
         pep1 = [{'aminoAcid': char, 'Modification': ''} for char in peptide.pep_seq1 if char.isupper()]
         offset = 1
         for match in re.finditer('[^A-Z]+', peptide.pep_seq1):
@@ -79,23 +81,31 @@ class XiAnnotatorSuper:
             if modification not in all_mods:
                 all_mods.append(modification)
 
-        pep2 = [{'aminoAcid': char, 'Modification': ''} for char in peptide.pep_seq2 if char.isupper()]
-        offset = 1
-        for match in re.finditer('[^A-Z]+', peptide.pep_seq2):
-            modification = match.group()
-            pep2[match.start() - offset]['Modification'] = modification
-            offset += len(modification)
-            # add to all mods
-            if modification not in all_mods:
-                all_mods.append(modification)
+        peptides.append(pep1)
 
-        peptides_block = [{"sequence": pep1}, {"sequence": pep2}]
+        if not peptide.is_linear:
+            pep2 = [{'aminoAcid': char, 'Modification': ''} for char in peptide.pep_seq2 if char.isupper()]
+            offset = 1
+            for match in re.finditer('[^A-Z]+', peptide.pep_seq2):
+                modification = match.group()
+                pep2[match.start() - offset]['Modification'] = modification
+                offset += len(modification)
+                # add to all mods
+                if modification not in all_mods:
+                    all_mods.append(modification)
+
+            peptides.append(pep2)
+
+        peptides_block = [{"sequence": pep} for pep in peptides]
 
         # link sites block
-        link_sites_block = [
-            {'id': 0, 'peptideId': 0, 'linkSite': peptide.link_pos1 - 1},
-            {'id': 0, 'peptideId': 1, 'linkSite': peptide.link_pos2 - 1}
-        ]
+        if peptide.is_linear:
+            link_sites_block = []
+        else:
+            link_sites_block = [
+                {'id': 0, 'peptideId': 0, 'linkSite': peptide.link_pos1 - 1},
+                {'id': 0, 'peptideId': 1, 'linkSite': peptide.link_pos2 - 1}
+            ]
 
         # peak list
         peak_block = [{"mz": float(x[0]), "intensity": float(x[1])} for x in peak_list]
