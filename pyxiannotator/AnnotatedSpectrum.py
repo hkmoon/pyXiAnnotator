@@ -173,7 +173,7 @@ class AnnotatedSpectrum:
         """
         peaks = self.get_peaks(deisotoped=deisotoped)
 
-        base_peak = sorted(peaks, key=lambda k: k.get_intensity())[-1]
+        base_peak = sorted(peaks, key=lambda k: k.intensity)[-1]
 
         if as_list:
             return base_peak.as_list()
@@ -210,7 +210,7 @@ class AnnotatedSpectrum:
 
         match_peak = peaks[errors.index(abs_match_error)]
 
-        match_err = (needle_mz - match_peak.get_mz()) / match_peak.get_mz()
+        match_err = (needle_mz - match_peak.mz) / match_peak.mz
 
         return match_peak, match_err
 
@@ -494,11 +494,11 @@ class Peak:
         self.spectrum = spectrum
         self.cluster_ids = cluster_ids
 
-    # def get_mz(self):
-    #     return self.mz
+    def get_mz(self):
+        return self.mz
 
-    # def get_intensity(self):
-    #     return self.intensity
+    def get_intensity(self):
+        return self.intensity
 
     def as_list(self):
         return [self.mz, self.intensity]
@@ -535,9 +535,9 @@ class Fragment:
 
     def get_intensity(self, deisotoped=False):
         if deisotoped:
-            return self.cluster.get_intensity()
+            return self.cluster.intensity
         else:
-            return self.peak.get_intensity()
+            return self.peak.intensity
 
     def get_mz(self):
         return self.peak.mz
@@ -626,7 +626,7 @@ class Fragment:
         """
 
         peak_int = self.get_intensity(deisotoped=deisotoped)
-        base_peak_int = self.spectrum.get_base_peak(deisotoped=deisotoped).get_intensity()
+        base_peak_int = self.spectrum.get_base_peak(deisotoped=deisotoped).intensity
 
         return peak_int / base_peak_int
 
@@ -716,6 +716,9 @@ class IsotopeCluster:
     @memoized_property
     def intensity(self):
         return sum([p.intensity for p in self.peaks])
+
+    def get_intensity(self):
+        return self.intensity
 
     def get_charge(self):
         return self.charge
