@@ -18,12 +18,12 @@ class AnnotatedSpectrum:
     def _deisotope_peaks_(self):
         non_cluster_peaks = [p for p in self.peaks if len(p.cluster_ids) == 0]
 
-        summed_cluster_peaks = [Peak(cluster.get_first_peak().get_mz(), cluster.get_intensity(), self) for cluster in
-                                self.clusters]
+        summed_cluster_peaks = [Peak(cluster.get_first_peak().mz, cluster.intensity, self)
+                                for cluster in self.clusters]
 
         deisotoped_peaks = non_cluster_peaks + summed_cluster_peaks
 
-        return sorted(deisotoped_peaks, key=lambda k: k.get_mz())
+        return sorted(deisotoped_peaks, key=lambda k: k.mz)
 
     def load_json(self, annotation_json):
 
@@ -38,8 +38,9 @@ class AnnotatedSpectrum:
                     fragment_cluster_id = fragment_cluster_info['Clusterid']
                     # fragment_cluster = anno_json['clusters'][fragment_cluster_id]
 
-                    # fragment_cluster_peaks = [Peak(peak['mz'], peak['intensity']) for peak in anno_json['peaks'] if
-                    #                           fragment_cluster_id in peak['clusterIds']]
+                    # fragment_cluster_peaks = [
+                    #     Peak(peak['mz'], peak['intensity']) for peak in anno_json['peaks'] if
+                    #     fragment_cluster_id in peak['clusterIds']]
 
                     if fragment['class'] == 'lossy':
                         lossy = True
@@ -48,7 +49,8 @@ class AnnotatedSpectrum:
                     else:
                         raise Exception('Unknown fragment class: %s' % fragment['class'])
 
-                    error = {'value': fragment_cluster_info['error'], 'unit': fragment_cluster_info['errorUnit']}
+                    error = {'value': fragment_cluster_info['error'],
+                             'unit': fragment_cluster_info['errorUnit']}
 
                     found_fragments.append(
                         Fragment(
@@ -66,7 +68,8 @@ class AnnotatedSpectrum:
                     )
             return found_fragments
 
-        self.peaks = [Peak(p['mz'], p['intensity'], self, p['clusterIds']) for p in annotation_json['peaks']]
+        self.peaks = [Peak(p['mz'], p['intensity'], self, p['clusterIds'])
+                      for p in annotation_json['peaks']]
 
         self.clusters = []
         cluster_index = 0
@@ -98,7 +101,8 @@ class AnnotatedSpectrum:
 
         pep_seqs = []
         for peptide_json in annotation_json['Peptides']:
-            pep_seq = "".join([aa['aminoAcid'] + aa['Modification'] for aa in peptide_json['sequence']])
+            pep_seq = "".join(
+                [aa['aminoAcid'] + aa['Modification'] for aa in peptide_json['sequence']])
             pep_seqs.append(pep_seq)
 
         if len(pep_seqs) == 1:
@@ -106,8 +110,9 @@ class AnnotatedSpectrum:
             self.isLinear = True
 
         try:
-            link_pos1 = annotation_json['LinkSite'][0]['linkSite'] + 1      # link_pos in annotator is 0 based
-            link_pos2 = annotation_json['LinkSite'][1]['linkSite'] + 1      # link_pos in annotator is 0 based
+            # link_pos in annotator is 0 based
+            link_pos1 = annotation_json['LinkSite'][0]['linkSite'] + 1
+            link_pos2 = annotation_json['LinkSite'][1]['linkSite'] + 1
         except IndexError:
             link_pos1 = -1
             link_pos2 = -1
@@ -116,7 +121,8 @@ class AnnotatedSpectrum:
             pep_seqs[0],
             pep_seqs[1],
             annotation_json['annotation']['precursorCharge'],
-            None,   # annotation_json['annotation']['precursorMZ'], ToDo: precursorMZ = matchMZ? should maybe use calcMZ?
+            None,  # annotation_json['annotation']['precursorMZ'],
+            # ToDo: precursorMZ = matchMZ? should maybe use calcMZ?
             link_pos1,
             link_pos2
         )
@@ -140,8 +146,10 @@ class AnnotatedSpectrum:
 
     def get_peaks(self, as_list=False, deisotoped=False):
         """
-        get the peaks of the spectrum. Either as list of Peak objects or list of [mz, int] with the option of
-        deisotoping according to found clusters
+        Get the peaks of the spectrum.
+
+        Either as list of Peak objects or list of [mz, int] with the option of deisotoping according
+         to found clusters.
         :param as_list: return as list of [mz, int]
         :param deisotoped: deisotoping on/off
         :return: spectrum peaks
@@ -180,7 +188,9 @@ class AnnotatedSpectrum:
 
     def match_peak(self, needle_mz, tolerance=None, deisotoped=False):
         """
-        find a peak in spectrum with a certain tolerance (default fragment tolerance from annotation)
+        Find a peak in spectrum with a certain tolerance.
+
+        (default fragment tolerance from annotation)
         :param needle_mz: needle m/z value
         :param tolerance: error tolerance for matching (default fragment tolerance from annotation)
         :param deisotoped: deisotoping on/off
@@ -223,7 +233,7 @@ class AnnotatedSpectrum:
         :return: unfragmented precursor fragment
         """
         precursor_fragments = [
-            f for f in self.get_fragments() if f.get_ion_type() == 'Precursor'
+            f for f in self.get_fragments() if f.ion_type == 'Precursor'
             # and f.get_charge() == self.precursor['charge']
         ]
         if len(precursor_fragments) == 0:
@@ -256,11 +266,11 @@ class AnnotatedSpectrum:
             "yLike_seq_coverage"
         """
 
-        seq_cov_fragments = [f for f in self.get_fragments(lossy=lossy) if f.get_by_type() != '']
+        seq_cov_fragments = [f for f in self.get_fragments(lossy=lossy) if f.by_type != '']
 
         # alpha beta assignment
-        pep1_fragments = [f for f in seq_cov_fragments if f.get_peptide_id() == 0]
-        pep2_fragments = [f for f in seq_cov_fragments if f.get_peptide_id() == 1]
+        pep1_fragments = [f for f in seq_cov_fragments if f.peptide_id == 0]
+        pep2_fragments = [f for f in seq_cov_fragments if f.peptide_id == 1]
 
         n_pep1 = len(pep1_fragments)
         n_pep2 = len(pep2_fragments)
@@ -283,15 +293,15 @@ class AnnotatedSpectrum:
         aa_len_pep1 = sum(1 for c in self.peptide.pep_seq1 if c.isupper())
         aa_len_pep2 = sum(1 for c in self.peptide.pep_seq2 if c.isupper())
 
-        seq_cov_fragments_set = set([f.get_sequence_coverage_id() for f in seq_cov_fragments])
+        seq_cov_fragments_set = set([f.sequence_coverage_id for f in seq_cov_fragments])
         seq_cov_frag_count = len(seq_cov_fragments_set)
 
         alpha_cov_fragments = set(
-            [f.get_sequence_coverage_id() for f in seq_cov_fragments if f.get_peptide_id() == alpha])
+            [f.sequence_coverage_id for f in seq_cov_fragments if f.peptide_id == alpha])
         alpha_cov_frag_count = len(alpha_cov_fragments)
 
         beta_cov_fragments = set(
-            [f.get_sequence_coverage_id() for f in seq_cov_fragments if f.get_peptide_id() == beta])
+            [f.sequence_coverage_id for f in seq_cov_fragments if f.peptide_id == beta])
         beta_cov_frag_count = len(beta_cov_fragments)
 
         if alpha == 0:
@@ -302,13 +312,14 @@ class AnnotatedSpectrum:
             theoretical_beta_frag_count = ((aa_len_pep1 - 1) * 2)
 
         if self.isLinear:
-            theoretical_beta_frag_count = 0
-
-        theoretical_frag_count = theoretical_alpha_frag_count + theoretical_beta_frag_count
+            theoretical_frag_count = theoretical_alpha_frag_count
+            beta_coverage = 0
+        else:
+            theoretical_frag_count = theoretical_alpha_frag_count + theoretical_beta_frag_count
+            beta_coverage = float(beta_cov_frag_count) / theoretical_beta_frag_count
 
         seq_coverage = float(seq_cov_frag_count) / theoretical_frag_count
         alpha_coverage = float(alpha_cov_frag_count) / theoretical_alpha_frag_count
-        beta_coverage = float(beta_cov_frag_count) / theoretical_beta_frag_count
 
         if seq_cov_frag_count != alpha_cov_frag_count + beta_cov_frag_count:
             print("n: %s; n_a:%s; n_b: %s " % (seq_cov_frag_count, alpha_cov_frag_count,
@@ -317,10 +328,12 @@ class AnnotatedSpectrum:
 
         symmetry = 1 - math.fabs(alpha_coverage - beta_coverage)
 
-        b_like_seq_cov_fragments = set([f.get_sequence_coverage_id() for f in seq_cov_fragments if f.get_by_type() == 'bLike'])
+        b_like_seq_cov_fragments = set(
+            [f.sequence_coverage_id for f in seq_cov_fragments if f.by_type == 'bLike'])
         b_like_frag_count = len(b_like_seq_cov_fragments)
 
-        y_like_seq_cov_fragments = set([f.get_sequence_coverage_id() for f in seq_cov_fragments if f.get_by_type() == 'yLike'])
+        y_like_seq_cov_fragments = set(
+            [f.sequence_coverage_id for f in seq_cov_fragments if f.by_type == 'yLike'])
         y_like_frag_count = len(y_like_seq_cov_fragments)
 
         b_like_seq_cov = float(b_like_frag_count) / theoretical_frag_count
@@ -377,7 +390,7 @@ class Peptide:
         self.link_pos2 = int(link_pos2)
 
     @memoized_property
-    def get_unique_id(self):
+    def unique_id(self):
         if self.is_linear:
             return self.pep_seq1
         link_pos1 = str(self.link_pos1)
@@ -422,8 +435,8 @@ class MzSpecies(Peptide):
         self.rt = rt
 
     @memoized_property
-    def get_unique_id(self):
-        return "{}:{}".format(Peptide.get_unique_id(self), self.charge)
+    def unique_id(self):
+        return "{}:{}".format(Peptide.unique_id, self.charge)
 
     # ToDo: write function
     # def calculate_mz(self):
@@ -481,11 +494,11 @@ class Peak:
         self.spectrum = spectrum
         self.cluster_ids = cluster_ids
 
-    def get_mz(self):
-        return self.mz
+    # def get_mz(self):
+    #     return self.mz
 
-    def get_intensity(self):
-        return self.intensity
+    # def get_intensity(self):
+    #     return self.intensity
 
     def as_list(self):
         return [self.mz, self.intensity]
@@ -527,25 +540,25 @@ class Fragment:
             return self.peak.get_intensity()
 
     def get_mz(self):
-        return self.peak.get_mz()
+        return self.peak.mz
 
-    def get_peak(self):
-        return self.peak
+    # def get_peak(self):
+    #     return self.peak
 
-    def get_name(self):
-        return self.name
+    # def get_name(self):
+    #     return self.name
 
-    def get_peptide_id(self):
-        return self.peptide_id
+    # def get_peptide_id(self):
+    #     return self.peptide_id
 
-    def get_sequence(self):
-        return self.sequence
+    # def get_sequence(self):
+    #     return self.sequence
 
-    def get_calc_mz(self):
-        return self.calc_mz
+    # def get_calc_mz(self):
+    #     return self.calc_mz
 
-    def get_error(self):
-        return self.error
+    # def get_error(self):
+    #     return self.error
 
     def get_error_ppm(self):
         # ToDo: calc error if unit is Da
@@ -553,7 +566,7 @@ class Fragment:
         return self.error['value']
 
     @memoized_property
-    def get_ion_type(self):
+    def ion_type(self):
         # ToDo: might need rework based on fragment['type']
         if re.search('^[abcxyz]', self.name):
             return self.name[0]
@@ -572,18 +585,18 @@ class Fragment:
         raise Exception('Unknown fragment type in name: %s' % self.name)
 
     @memoized_property
-    def get_ion_number(self):
+    def ion_number(self):
         try:
-            return re.match('[abcxyz]([0-9]+)(?:\+P)?_?', self.name).groups()[0]
+            return re.match('[abcxyz]([0-9]+)(?:\\+P)?_?', self.name).groups()[0]
         except AttributeError:
             return ''
 
     @memoized_property
-    def get_charge(self):
+    def charge(self):
         return self.cluster.get_charge()
 
     @memoized_property
-    def get_by_type(self):
+    def by_type(self):
         by_type = ''
         if re.search('^[abc]', self.name):
             by_type = 'bLike'
@@ -592,12 +605,12 @@ class Fragment:
         return by_type
 
     @memoized_property
-    def get_sequence_coverage_id(self):
+    def sequence_coverage_id(self):
         """
         returns the unique identifier for calculating sequence coverage
         by_type-ion_number-peptide_id
         """
-        return "-".join([self.get_by_type(), self.get_ion_number(), str(self.get_peptide_id())])
+        return "-".join([self.by_type, self.ion_number, str(self.peptide_id)])
 
     def get_lossy(self):
         return self.lossy
@@ -621,15 +634,18 @@ class Fragment:
         """
         get the relative intensity to the precursor
         :param deisotoped: deisotoping on/off
-        :param manual_match: False means only the matched precursor is considered, True tries to find the precursor manually
-        :param manual_match_tolerance: tolerance for matching precursor. Default is spectrum fragment tolerance.
+        :param manual_match: False means only the matched precursor is considered,
+            True tries to find the precursor manually
+        :param manual_match_tolerance: tolerance for matching precursor.
+            Default is spectrum fragment tolerance.
         :return: (float) relative intensity to precursor
         """
 
         peak_int = self.get_intensity(deisotoped=deisotoped)
 
         if manual_match:
-            manual_precursor_match = self.spectrum.match_unfragmented_precursor_peak(deisotoped=deisotoped, tolerance=manual_match_tolerance)
+            manual_precursor_match = self.spectrum.match_unfragmented_precursor_peak(
+                deisotoped=deisotoped, tolerance=manual_match_tolerance)
             if manual_precursor_match[0] is None:
                 precursor_int = 0
             else:
@@ -649,7 +665,8 @@ class Fragment:
 
     def get_intensity_ratio(self, deisotoped=False):
         """
-        get the intensity ratio of intensity to all intensity
+        Get the intensity ratio of intensity to all intensity.
+
         :param deisotoped: deisotoping on/off
         :return: float intensity ratio
         """
@@ -660,28 +677,32 @@ class Fragment:
         return float(self.get_intensity(deisotoped=deisotoped)) / total_spectrum_intensity
 
     def as_dict(self):
+
+        deisotoped_rank = self.spectrum.get_peak_rank(
+            [self.get_mz(), self.get_intensity(deisotoped=True)], deisotoped=True, as_list=True),
         return {
             "intensity": self.get_intensity(),
             "deisotoped_intensity": self.get_intensity(deisotoped=True),
-            "name": self.get_name(),
-            "pep_id": self.get_peptide_id(),
-            "calc_mz": self.get_calc_mz(),
+            "name": self.name,
+            "pep_id": self.peptide_id,
+            "calc_mz": self.calc_mz,
             "match_mz": self.get_mz(),
             "ppm": self.get_error_ppm(),
-            "charge": self.get_charge(),
-            "seq": self.get_sequence(),
-            "type": self.get_ion_type(),
-            "number": self.get_ion_number(),
-            "by_type": self.get_by_type(),
+            "charge": self.charge,
+            "seq": self.sequence,
+            "type": self.ion_type,
+            "number": self.ion_number,
+            "by_type": self.by_type,
             "lossy": self.get_lossy(),
             "rank": self.get_rank(),
-            "deisotoped_rank": self.spectrum.get_peak_rank([self.get_mz(), self.get_intensity(deisotoped=True)], deisotoped=True, as_list=True),
+            "deisotoped_rank": deisotoped_rank,
             "rel_int_base_peak": self.get_rel_int_base_peak(),
             "deisotoped_rel_int_base_peak": self.get_rel_int_base_peak(deisotoped=True),
             "rel_int_precursor": self.get_rel_int_precursor(),
             "deisotoped_rel_int_precursor": self.get_rel_int_precursor(deisotoped=True),
             "rel_int_precursor_manualMatch": self.get_rel_int_precursor(manual_match=True),
-            "deisotoped_rel_int_precursor_manualMatch": self.get_rel_int_precursor(deisotoped=True, manual_match=True),
+            "deisotoped_rel_int_precursor_manualMatch": self.get_rel_int_precursor(
+                deisotoped=True, manual_match=True),
             'intensity_ratio': self.get_intensity_ratio(),
             'deisotoped_intensity_ratio': self.get_intensity_ratio(deisotoped=True),
         }
@@ -693,7 +714,7 @@ class IsotopeCluster:
         self.charge = charge
 
     @memoized_property
-    def get_intensity(self):
+    def intensity(self):
         return sum([p.intensity for p in self.peaks])
 
     def get_charge(self):
