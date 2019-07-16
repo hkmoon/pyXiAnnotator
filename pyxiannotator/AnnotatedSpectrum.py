@@ -555,7 +555,10 @@ class Fragment:
         if self.name.startswith('P+P'):
             return 'Precursor'
         if self.name.startswith('P'):
-            return 'Peptide'
+            if self.spectrum.isLinear:
+                return 'Precursor'
+            else:
+                return 'Peptide'
 
         raise Exception('Unknown fragment type in name: %s' % self.name)
 
