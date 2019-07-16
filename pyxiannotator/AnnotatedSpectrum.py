@@ -90,7 +90,8 @@ class AnnotatedSpectrum:
         if frag_tol['unit'] == 'ppm':
             self.fragment_tolerance = float(frag_tol['tolerance']) * 1e-6
         elif frag_tol['unit'] == 'Da':
-            raise Exception("Da fragment tolerance currently not supported")    # ToDo: implement Da tolerance - not high priority
+            # ToDo: implement Da tolerance - not high priority
+            raise Exception("Da fragment tolerance currently not supported")
         else:
             raise Exception("Unknown fragment tolerance unit: {}".format(frag_tol['unit']))
 
@@ -214,21 +215,20 @@ class AnnotatedSpectrum:
 
         return self.match_peak(precursor_mz, tolerance, deisotoped)
 
-    def get_unfragmented_precursor_fragment(self):
-        # ToDo: unfragmented precursor intensity only intensity of peak with same charge state?
+    def get_unfragmented_precursor_fragments(self):
         """
-        Returns the unfragmented precursor (matched precursor fragment with same charge state)
+        Return the unfragmented precursor (matched precursor fragments).
+
         :return: unfragmented precursor fragment
         """
         precursor_fragments = [
-            f for f in self.get_fragments() if
-            f.get_ion_type() == 'Precursor' and
-            f.get_charge() == self.precursor['charge']
+            f for f in self.get_fragments() if f.get_ion_type() == 'Precursor'
+            # and f.get_charge() == self.precursor['charge']
         ]
         if len(precursor_fragments) == 0:
             return None
 
-        return precursor_fragments[0]
+        return precursor_fragments
 
     def get_peak_rank(self, peak, deisotoped=False, as_list=False):
         peaks = self.get_peaks(deisotoped=deisotoped, as_list=True)
