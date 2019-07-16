@@ -301,13 +301,18 @@ class AnnotatedSpectrum:
             theoretical_alpha_frag_count = ((aa_len_pep2 - 1) * 2)
             theoretical_beta_frag_count = ((aa_len_pep1 - 1) * 2)
 
-        seq_coverage = float(seq_cov_frag_count) / (theoretical_alpha_frag_count + theoretical_beta_frag_count)
+        if self.isLinear:
+            theoretical_beta_frag_count = 0
+
+        theoretical_frag_count = theoretical_alpha_frag_count + theoretical_beta_frag_count
+
+        seq_coverage = float(seq_cov_frag_count) / theoretical_frag_count
         alpha_coverage = float(alpha_cov_frag_count) / theoretical_alpha_frag_count
         beta_coverage = float(beta_cov_frag_count) / theoretical_beta_frag_count
 
         if seq_cov_frag_count != alpha_cov_frag_count + beta_cov_frag_count:
-            print("n: %s; n_a:%s; n_b: %s " % (seq_cov_frag_count, alpha_cov_frag_count, beta_cov_frag_count))
-            # print(normal_fragments)
+            print("n: %s; n_a:%s; n_b: %s " % (seq_cov_frag_count, alpha_cov_frag_count,
+                                               beta_cov_frag_count))
             raise Exception("Number of fragments doesn't add up")
 
         symmetry = 1 - math.fabs(alpha_coverage - beta_coverage)
@@ -318,8 +323,8 @@ class AnnotatedSpectrum:
         y_like_seq_cov_fragments = set([f.get_sequence_coverage_id() for f in seq_cov_fragments if f.get_by_type() == 'yLike'])
         y_like_frag_count = len(y_like_seq_cov_fragments)
 
-        b_like_seq_cov = float(b_like_frag_count) / (theoretical_alpha_frag_count + theoretical_beta_frag_count)
-        y_like_seq_cov = float(y_like_frag_count) / (theoretical_alpha_frag_count + theoretical_beta_frag_count)
+        b_like_seq_cov = float(b_like_frag_count) / theoretical_frag_count
+        y_like_seq_cov = float(y_like_frag_count) / theoretical_frag_count
 
         if b_like_frag_count + y_like_frag_count != seq_cov_frag_count:
             raise Exception("b/y like fragment counts don't add up!")
