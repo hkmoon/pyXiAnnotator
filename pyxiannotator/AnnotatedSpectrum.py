@@ -389,7 +389,6 @@ class Peptide:
         self.link_pos1 = int(link_pos1)
         self.link_pos2 = int(link_pos2)
 
-    @memoized_property
     def unique_id(self):
         if self.is_linear:
             return self.pep_seq1
@@ -434,9 +433,8 @@ class MzSpecies(Peptide):
         self.mz = mz
         self.rt = rt
 
-    @memoized_property
     def unique_id(self):
-        return "{}:{}".format(Peptide.unique_id, self.charge)
+        return "{}:{}".format(Peptide.unique_id(self), self.charge)
 
     # ToDo: write function
     # def calculate_mz(self):
