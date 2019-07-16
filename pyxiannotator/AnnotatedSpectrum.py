@@ -651,12 +651,12 @@ class Fragment:
             else:
                 precursor_int = manual_precursor_match[0].get_intensity()
         else:
-            precursor = self.spectrum.get_unfragmented_precursor_fragment()
+            precursor = self.spectrum.get_unfragmented_precursor_fragments()
 
             if precursor is None:
                 precursor_int = 0
             else:
-                precursor_int = precursor.get_intensity(deisotoped=deisotoped)
+                precursor_int = sum([p.get_intensity(deisotoped=deisotoped) for p in precursor])
 
         try:
             return peak_int / precursor_int
