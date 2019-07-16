@@ -1,5 +1,6 @@
 import re
 import math
+from memoized_property import memoized_property
 
 
 class AnnotatedSpectrum:
@@ -370,6 +371,7 @@ class Peptide:
         self.link_pos1 = int(link_pos1)
         self.link_pos2 = int(link_pos2)
 
+    @memoized_property
     def get_unique_id(self):
         if self.is_linear:
             return self.pep_seq1
@@ -414,6 +416,7 @@ class MzSpecies(Peptide):
         self.mz = mz
         self.rt = rt
 
+    @memoized_property
     def get_unique_id(self):
         return "{}:{}".format(Peptide.get_unique_id(self), self.charge)
 
@@ -544,6 +547,7 @@ class Fragment:
         assert self.error['unit'] == 'ppm'
         return self.error['value']
 
+    @memoized_property
     def get_ion_type(self):
         # ToDo: might need rework based on fragment['type']
         if re.search('^[abcxyz]', self.name):
@@ -562,15 +566,18 @@ class Fragment:
 
         raise Exception('Unknown fragment type in name: %s' % self.name)
 
+    @memoized_property
     def get_ion_number(self):
         try:
             return re.match('[abcxyz]([0-9]+)(?:\+P)?_?', self.name).groups()[0]
         except AttributeError:
             return ''
 
+    @memoized_property
     def get_charge(self):
         return self.cluster.get_charge()
 
+    @memoized_property
     def get_by_type(self):
         by_type = ''
         if re.search('^[abc]', self.name):
@@ -579,6 +586,7 @@ class Fragment:
             by_type = 'yLike'
         return by_type
 
+    @memoized_property
     def get_sequence_coverage_id(self):
         """
         returns the unique identifier for calculating sequence coverage
@@ -679,6 +687,7 @@ class IsotopeCluster:
         self.peaks = peaks
         self.charge = charge
 
+    @memoized_property
     def get_intensity(self):
         return sum([p.intensity for p in self.peaks])
 
