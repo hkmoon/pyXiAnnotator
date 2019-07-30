@@ -8,3 +8,5 @@ dist/
 \.directory
 
 update
+
+\.eggs/

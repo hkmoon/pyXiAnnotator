@@ -50,11 +50,12 @@ class XiAnnotatorSuper:
             try:
                 cross_linker_mod_mass = cross_linker_mod_masses[cross_linker]
             except KeyError:
-                raise Exception('unknown cross-linker: %s' % cross_linker)
+                raise ValueError('unknown crosslinker: %s' % cross_linker)
 
         mod_mass_dict = {
             'bs3': 27.984,  # ???
             'bs3loop': 138.06807,
+            'bs3nh': 155.094619105,
             'bs3nh2': 155.094619105,
             'bs3oh': 156.0786347,
             'cm': 57.021464,
@@ -151,7 +152,7 @@ class XiAnnotatorLocal(XiAnnotatorSuper):
     def __init__(self, java_home_dir='/usr/lib/jvm/java-8-openjdk-amd64/', jar_path=''):
         XiAnnotatorSuper.__init__(self)
 
-        self.xiAnnotatorVersion = '1.4.20'
+        self.xiAnnotatorVersion = '1.4.21'
 
         import os
         os.environ['JAVA_HOME'] = java_home_dir
