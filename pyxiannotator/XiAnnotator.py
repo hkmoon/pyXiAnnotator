@@ -152,7 +152,7 @@ class XiAnnotatorLocal(XiAnnotatorSuper):
     def __init__(self, java_home_dir='/usr/lib/jvm/java-8-openjdk-amd64/', jar_path=''):
         XiAnnotatorSuper.__init__(self)
 
-        self.xiAnnotatorVersion = '1.4.22'
+        self.xiAnnotatorVersion = '1.4.23'
 
         import os
         os.environ['JAVA_HOME'] = java_home_dir
