@@ -22,7 +22,8 @@ class XiAnnotatorSuper:
             fragment_tolerance_ppm=10.0,
             cross_linker="BS3",
             custom_settings=False,
-            as_dict=False
+            as_dict=False,
+            modifications={}
     ):
         """
         Runs the Xi annotator to get the fragment annotation.
@@ -34,7 +35,8 @@ class XiAnnotatorSuper:
         :param fragment_tolerance_ppm: (float) fragment tolerance in ppm to use
         :param cross_linker: either (str) cross-linker used or (float) cross-linker mod mass
         :param custom_settings: (list) custom_settings
-        :param as_dict: returns request as dictionary instead of json
+        :param as_dict: (bool) returns request as dictionary instead of json
+        :param modifications: (dict) define additional modifications as name:mass dict
         :return: annotation request
         """
 
@@ -64,7 +66,7 @@ class XiAnnotatorSuper:
             'dssonh2': 175.030313905,
             'dssooh': 176.0143295
         }
-
+        mod_mass_dict.update(modifications)
         fragment_tolerance_ppm = str(fragment_tolerance_ppm)
 
         all_mods = []
