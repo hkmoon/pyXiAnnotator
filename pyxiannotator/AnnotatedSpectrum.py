@@ -677,7 +677,7 @@ class Fragment:
     def as_dict(self):
 
         deisotoped_rank = self.spectrum.get_peak_rank(
-            [self.get_mz(), self.get_intensity(deisotoped=True)], deisotoped=True, as_list=True),
+            [self.get_mz(), self.get_intensity(deisotoped=True)], deisotoped=True, as_list=True)
         return {
             "intensity": self.get_intensity(),
             "deisotoped_intensity": self.get_intensity(deisotoped=True),
