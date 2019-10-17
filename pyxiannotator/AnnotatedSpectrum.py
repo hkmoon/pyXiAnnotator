@@ -42,6 +42,8 @@ class AnnotatedSpectrum:
                     #     Peak(peak['mz'], peak['intensity']) for peak in anno_json['peaks'] if
                     #     fragment_cluster_id in peak['clusterIds']]
 
+                    miss_monoiso = bool(fragment_cluster_info['matchedMissingMonoIsotopic'])
+
                     if fragment['class'] == 'lossy':
                         lossy = True
                     elif fragment['class'] == 'non-lossy':
@@ -59,6 +61,7 @@ class AnnotatedSpectrum:
                             self.clusters[fragment_cluster_id],
                             # IsotopeCluster(fragment_cluster_peaks, fragment_cluster['charge']),
                             lossy,
+                            miss_monoiso,
                             fragment['sequence'],
                             fragment_cluster_info['calcMZ'],
                             error,
@@ -515,6 +518,7 @@ class Fragment:
             peptide_id,
             cluster,
             lossy,
+            missing_monoisotopic,
             sequence,
             calc_mz,
             error,
@@ -524,6 +528,7 @@ class Fragment:
         self.name = name
         self.peptide_id = peptide_id
         self.lossy = lossy
+        self.missing_monoisotopic = missing_monoisotopic
         self.cluster = cluster
         self.sequence = sequence
         self.calc_mz = float(calc_mz)
@@ -679,27 +684,28 @@ class Fragment:
         deisotoped_rank = self.spectrum.get_peak_rank(
             [self.get_mz(), self.get_intensity(deisotoped=True)], deisotoped=True, as_list=True)
         return {
-            "intensity": self.get_intensity(),
-            "deisotoped_intensity": self.get_intensity(deisotoped=True),
-            "name": self.name,
-            "pep_id": self.peptide_id,
-            "calc_mz": self.calc_mz,
-            "match_mz": self.get_mz(),
-            "ppm": self.get_error_ppm(),
-            "charge": self.charge,
-            "seq": self.sequence,
-            "type": self.ion_type,
-            "number": self.ion_number,
-            "by_type": self.by_type,
-            "lossy": self.get_lossy(),
-            "rank": self.get_rank(),
-            "deisotoped_rank": deisotoped_rank,
-            "rel_int_base_peak": self.get_rel_int_base_peak(),
-            "deisotoped_rel_int_base_peak": self.get_rel_int_base_peak(deisotoped=True),
-            "rel_int_precursor": self.get_rel_int_precursor(),
-            "deisotoped_rel_int_precursor": self.get_rel_int_precursor(deisotoped=True),
-            "rel_int_precursor_manualMatch": self.get_rel_int_precursor(manual_match=True),
-            "deisotoped_rel_int_precursor_manualMatch": self.get_rel_int_precursor(
+            'intensity': self.get_intensity(),
+            'deisotoped_intensity': self.get_intensity(deisotoped=True),
+            'name': self.name,
+            'pep_id': self.peptide_id,
+            'calc_mz': self.calc_mz,
+            'match_mz': self.get_mz(),
+            'ppm': self.get_error_ppm(),
+            'charge': self.charge,
+            'seq': self.sequence,
+            'type': self.ion_type,
+            'number': self.ion_number,
+            'by_type': self.by_type,
+            'lossy': self.get_lossy(),
+            'matched_missing_monoisotopic': self.missing_monoisotopic,
+            'rank': self.get_rank(),
+            'deisotoped_rank': deisotoped_rank,
+            'rel_int_base_peak': self.get_rel_int_base_peak(),
+            'deisotoped_rel_int_base_peak': self.get_rel_int_base_peak(deisotoped=True),
+            'rel_int_precursor': self.get_rel_int_precursor(),
+            'deisotoped_rel_int_precursor': self.get_rel_int_precursor(deisotoped=True),
+            'rel_int_precursor_manualMatch': self.get_rel_int_precursor(manual_match=True),
+            'deisotoped_rel_int_precursor_manualMatch': self.get_rel_int_precursor(
                 deisotoped=True, manual_match=True),
             'intensity_ratio': self.get_intensity_ratio(),
             'deisotoped_intensity_ratio': self.get_intensity_ratio(deisotoped=True),
