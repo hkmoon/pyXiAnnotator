@@ -27,3 +27,5 @@ annotation_request = XiAnnotator.create_json_annotation_request(
 
 XiAnnotator.request_annotation_json(annotation_request)
 annotated_spectrum = XiAnnotator.get_annotated_spectrum()
+
+annotated_spectrum.get_fragments(lossy=True, as_dict=True)

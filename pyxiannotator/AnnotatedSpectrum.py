@@ -66,7 +66,8 @@ class AnnotatedSpectrum:
                             fragment_cluster_info['calcMZ'],
                             error,
                             self.clusters[fragment_cluster_id].get_first_peak(),
-                            self
+                            self,
+                            fragment['type']
                         )
                     )
             return found_fragments
@@ -523,7 +524,8 @@ class Fragment:
             calc_mz,
             error,
             peak,
-            spectrum
+            spectrum,
+            frag_type,
     ):
         self.name = name
         self.peptide_id = peptide_id
@@ -535,6 +537,7 @@ class Fragment:
         self.error = error
         self.peak = peak
         self.spectrum = spectrum
+        self.frag_type = frag_type
 
     def get_intensity(self, deisotoped=False):
         if deisotoped:
@@ -695,6 +698,7 @@ class Fragment:
             'seq': self.sequence,
             'type': self.ion_type,
             'number': self.ion_number,
+            'frag_type': self.frag_type,
             'by_type': self.by_type,
             'lossy': self.get_lossy(),
             'matched_missing_monoisotopic': self.missing_monoisotopic,
