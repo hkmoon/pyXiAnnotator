@@ -18,8 +18,10 @@ class AnnotatedSpectrum:
     def _deisotope_peaks_(self):
         non_cluster_peaks = [p for p in self.peaks if len(p.cluster_ids) == 0]
 
-        summed_cluster_peaks = [Peak(cluster.get_first_peak().mz, cluster.intensity, self)
-                                for cluster in self.clusters]
+        summed_cluster_peaks = [
+            Peak(cluster.get_first_peak().id, cluster.get_first_peak().mz, cluster.intensity, self,
+                 [cluster.id])
+            for cluster in self.clusters]
 
         deisotoped_peaks = non_cluster_peaks + summed_cluster_peaks
 
@@ -72,14 +74,14 @@ class AnnotatedSpectrum:
                     )
             return found_fragments
 
-        self.peaks = [Peak(p['mz'], p['intensity'], self, p['clusterIds'])
-                      for p in annotation_json['peaks']]
+        self.peaks = [Peak(i, p['mz'], p['intensity'], self, p['clusterIds'])
+                      for i, p in enumerate(annotation_json['peaks'])]
 
         self.clusters = []
         cluster_index = 0
-        for cluster in annotation_json['clusters']:
+        for i, cluster in enumerate(annotation_json['clusters']):
             cluster_peaks = [p for p in self.peaks if cluster_index in p.cluster_ids]
-            self.clusters.append(IsotopeCluster(cluster_peaks, cluster['charge']))
+            self.clusters.append(IsotopeCluster(i, cluster_peaks, cluster['charge']))
             cluster_index += 1
 
         self.deisotoped_peaks = self._deisotope_peaks_()
@@ -490,7 +492,17 @@ class MzSpeciesTarget(MzSpecies):
 
 
 class Peak:
-    def __init__(self, mz, intensity, spectrum, cluster_ids=()):
+    def __init__(self, p_id, mz, intensity, spectrum, cluster_ids=()):
+        """
+        Initialise the Peak.
+
+        :param p_id: (int) peak id (index into the spectrum peak list)
+        :param mz: (float) m/z value of the peak
+        :param intensity: (float) intensity value of the peak
+        :param spectrum: (Spectrum) spectrum object the peak belongs to
+        :param cluster_ids: (list of int) cluster ids that the peak is part of
+        """
+        self.id = p_id
         self.mz = mz
         self.intensity = intensity
         self.spectrum = spectrum
@@ -717,7 +729,15 @@ class Fragment:
 
 
 class IsotopeCluster:
-    def __init__(self, peaks, charge):
+    def __init__(self, c_id, peaks, charge):
+        """
+        Initialise the IsotopeCluster.
+
+        :param c_id: (int) cluster id (index into the spectrum cluster list)
+        :param peaks: (list of Peak) peaks associated with this cluster
+        :param charge: (int) charge state assigned to the cluster
+        """
+        self.id = c_id
         self.peaks = peaks
         self.charge = charge
 
