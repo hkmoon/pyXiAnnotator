@@ -180,11 +180,14 @@ class XiAnnotatorLocal(XiAnnotatorSuper):
         else:
             os.environ['CLASSPATH'] = jar_path
 
-        import jnius
-
-        self.JString = jnius.autoclass('java.lang.String')
-        annotator_java_class = jnius.autoclass('org.rappsilber.xiAnnotator')
-        self.annotator = annotator_java_class()
+        #import jnius
+        # self.JString = jnius.autoclass('java.lang.String')
+        # annotator_java_class = jnius.autoclass('org.rappsilber.xiAnnotator')
+        # self.annotator = annotator_java_class()
+        import jpype
+        jpype.startJVM(classpath=jar_path)
+        self.JString = jpype.java.lang.String
+        self.annotator = jpype.JPackage('org').rappsilber.xiAnnotator()
 
     def request_annotation_json(self, json_request):
         """
@@ -195,7 +198,7 @@ class XiAnnotatorLocal(XiAnnotatorSuper):
         self.last_request = json_request
 
         response = self.annotator.getFullAnnotation(self.JString(json_request)).getEntity()
-        json_response = json.loads(response)
+        json_response = json.loads(str(response))
 
         self.last_response = json_response
         self.annotated_spectrum.load_json(json_response)

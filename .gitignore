@@ -12,3 +12,9 @@ update
 \.eggs/
 
 .python-version
+
+pyxiannotator/__pycache__/__init__.cpython-38.pyc
+
+pyxiannotator/__pycache__/AnnotatedSpectrum.cpython-38.pyc
+
+pyxiannotator/__pycache__/XiAnnotator.cpython-38.pyc

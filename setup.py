@@ -22,7 +22,7 @@ setup(
         ]
     },
     setup_requires   = ['Cython'],
-    install_requires = ['jnius', 'requests', 'urllib3', 'memoized_property'],
+    install_requires = ['JPype1', 'requests', 'urllib3', 'memoized_property'],
     description      = 'MS spectra annotation and analysis',
     long_description = 'pyXiAnnotator - mass spectrometry spectra annotation and analysis',
     author           = 'L. Kolbowski',
