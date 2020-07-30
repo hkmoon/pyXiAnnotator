@@ -180,10 +180,6 @@ class XiAnnotatorLocal(XiAnnotatorSuper):
         else:
             os.environ['CLASSPATH'] = jar_path
 
-        #import jnius
-        # self.JString = jnius.autoclass('java.lang.String')
-        # annotator_java_class = jnius.autoclass('org.rappsilber.xiAnnotator')
-        # self.annotator = annotator_java_class()
         import jpype
         jpype.startJVM(classpath=jar_path)
         self.JString = jpype.java.lang.String
