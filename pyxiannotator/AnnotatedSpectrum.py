@@ -648,9 +648,11 @@ class Fragment:
 
         return peak_int / base_peak_int
 
-    def get_rel_int_precursor(self, deisotoped=False, manual_match=False, manual_match_tolerance=None):
+    def get_rel_int_precursor(self, deisotoped=False, manual_match=False,
+                              manual_match_tolerance=None):
         """
-        get the relative intensity to the precursor
+        Get the relative intensity to the precursor
+
         :param deisotoped: deisotoping on/off
         :param manual_match: False means only the matched precursor is considered,
             True tries to find the precursor manually
@@ -674,7 +676,9 @@ class Fragment:
             if precursor is None:
                 precursor_int = 0
             else:
-                precursor_int = sum([p.get_intensity(deisotoped=deisotoped) for p in precursor])
+                # precursor intensity needs to be divided by 2 because
+                # it's annotated twice (once for each peptide) by xiAnnotator!
+                precursor_int = sum([p.get_intensity(deisotoped=deisotoped) for p in precursor]) / 2
 
         try:
             return peak_int / precursor_int
