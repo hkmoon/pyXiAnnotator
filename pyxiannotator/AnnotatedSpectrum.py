@@ -247,6 +247,21 @@ class AnnotatedSpectrum:
 
         return precursor_fragments
 
+    def get_unfragmented_precursor_intensity(self, deisotoped=False):
+        """Return the unfragmented precursor intensity."""
+        precursor_frags = self.get_unfragmented_precursor_fragments()
+        if precursor_frags is None:
+            return 0
+        if deisotoped:
+            cluster = [f.cluster for f in precursor_frags]
+            peaks = [c.peaks for c in cluster]
+            peaks = [item for sublist in peaks for item in sublist]
+        else:
+            peaks = [f.peak for f in precursor_frags]
+        unique_peak_ids = set([p.id for p in peaks])
+        summed_intensity = sum([self.peaks[j].intensity for j in unique_peak_ids])
+        return summed_intensity
+
     def get_peak_rank(self, peak, deisotoped=False, as_list=False):
         peaks = self.get_peaks(deisotoped=deisotoped, as_list=True)
         peaks = sorted(peaks, key=lambda p: p[1], reverse=True)
@@ -671,14 +686,7 @@ class Fragment:
             else:
                 precursor_int = manual_precursor_match[0].get_intensity()
         else:
-            precursor = self.spectrum.get_unfragmented_precursor_fragments()
-
-            if precursor is None:
-                precursor_int = 0
-            else:
-                # precursor intensity needs to be divided by 2 because
-                # it's annotated twice (once for each peptide) by xiAnnotator!
-                precursor_int = sum([p.get_intensity(deisotoped=deisotoped) for p in precursor]) / 2
+            precursor_int = self.spectrum.get_unfragmented_precursor_intensity()
 
         try:
             return peak_int / precursor_int
@@ -720,15 +728,15 @@ class Fragment:
             'matched_missing_monoisotopic': self.missing_monoisotopic,
             'rank': self.get_rank(),
             'deisotoped_rank': deisotoped_rank,
-            'rel_int_base_peak': self.get_rel_int_base_peak(),
-            'deisotoped_rel_int_base_peak': self.get_rel_int_base_peak(deisotoped=True),
-            'rel_int_precursor': self.get_rel_int_precursor(),
-            'deisotoped_rel_int_precursor': self.get_rel_int_precursor(deisotoped=True),
-            'rel_int_precursor_manualMatch': self.get_rel_int_precursor(manual_match=True),
-            'deisotoped_rel_int_precursor_manualMatch': self.get_rel_int_precursor(
-                deisotoped=True, manual_match=True),
-            'intensity_ratio': self.get_intensity_ratio(),
-            'deisotoped_intensity_ratio': self.get_intensity_ratio(deisotoped=True),
+            # 'rel_int_base_peak': self.get_rel_int_base_peak(),
+            # 'deisotoped_rel_int_base_peak': self.get_rel_int_base_peak(deisotoped=True),
+            # 'rel_int_precursor': self.get_rel_int_precursor(),
+            # 'deisotoped_rel_int_precursor': self.get_rel_int_precursor(deisotoped=True),
+            # 'rel_int_precursor_manualMatch': self.get_rel_int_precursor(manual_match=True),
+            # 'deisotoped_rel_int_precursor_manualMatch': self.get_rel_int_precursor(
+            #     deisotoped=True, manual_match=True),
+            # 'intensity_ratio': self.get_intensity_ratio(),
+            # 'deisotoped_intensity_ratio': self.get_intensity_ratio(deisotoped=True),
         }
 
 
