@@ -728,7 +728,7 @@ class Fragment:
             'matched_missing_monoisotopic': self.missing_monoisotopic,
             'rank': self.get_rank(),
             'deisotoped_rank': deisotoped_rank,
-            # 'rel_int_base_peak': self.get_rel_int_base_peak(),
+            'rel_int_base_peak': self.get_rel_int_base_peak(),
             # 'deisotoped_rel_int_base_peak': self.get_rel_int_base_peak(deisotoped=True),
             # 'rel_int_precursor': self.get_rel_int_precursor(),
             # 'deisotoped_rel_int_precursor': self.get_rel_int_precursor(deisotoped=True),
