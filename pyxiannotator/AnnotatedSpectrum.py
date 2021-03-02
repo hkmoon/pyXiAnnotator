@@ -69,7 +69,8 @@ class AnnotatedSpectrum:
                             error,
                             self.clusters[fragment_cluster_id].get_first_peak(),
                             self,
-                            fragment['type']
+                            fragment['type'],
+                            fragment_cluster_info['matchedCharge']
                         )
                     )
             return found_fragments
@@ -553,6 +554,7 @@ class Fragment:
             peak,
             spectrum,
             frag_type,
+            charge
     ):
         self.name = name
         self.peptide_id = peptide_id
@@ -565,6 +567,7 @@ class Fragment:
         self.peak = peak
         self.spectrum = spectrum
         self.frag_type = frag_type
+        self.charge = charge
 
     def get_intensity(self, deisotoped=False):
         if deisotoped:
@@ -574,24 +577,6 @@ class Fragment:
 
     def get_mz(self):
         return self.peak.mz
-
-    # def get_peak(self):
-    #     return self.peak
-
-    # def get_name(self):
-    #     return self.name
-
-    # def get_peptide_id(self):
-    #     return self.peptide_id
-
-    # def get_sequence(self):
-    #     return self.sequence
-
-    # def get_calc_mz(self):
-    #     return self.calc_mz
-
-    # def get_error(self):
-    #     return self.error
 
     def get_error_ppm(self):
         # ToDo: calc error if unit is Da
@@ -625,7 +610,7 @@ class Fragment:
             return ''
 
     @memoized_property
-    def charge(self):
+    def cluster_charge(self):
         return self.cluster.get_charge()
 
     @memoized_property
@@ -719,6 +704,7 @@ class Fragment:
             'match_mz': self.get_mz(),
             'ppm': self.get_error_ppm(),
             'charge': self.charge,
+            'cluster_charge': self.cluster_charge,
             'seq': self.sequence,
             'type': self.ion_type,
             'number': self.ion_number,
