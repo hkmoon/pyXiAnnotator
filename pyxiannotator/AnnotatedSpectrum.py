@@ -11,7 +11,6 @@ class AnnotatedSpectrum:
         self.fragments = []
         self.annotation_json = None
         self.precursor = {}
-        self.fragment_tolerance = None
         self.isLinear = None
         self.peptide = None
 
@@ -35,7 +34,7 @@ class AnnotatedSpectrum:
             for fragment in anno_json['fragments']:
                 # each cluster is one charge state
                 for fragment_cluster_info in fragment['clusterInfo']:
-                    assert fragment_cluster_info['errorUnit'] == 'ppm'
+                    # assert fragment_cluster_info['errorUnit'] == 'ppm'
 
                     fragment_cluster_id = fragment_cluster_info['Clusterid']
                     # fragment_cluster = anno_json['clusters'][fragment_cluster_id]
@@ -96,15 +95,6 @@ class AnnotatedSpectrum:
             'intensity': annotation_json['annotation']['precursorIntensity'],
             'charge': annotation_json['annotation']['precursorCharge'],
         }
-
-        frag_tol = annotation_json['annotation']['fragmentTolerance']
-        if frag_tol['unit'] == 'ppm':
-            self.fragment_tolerance = float(frag_tol['tolerance']) * 1e-6
-        elif frag_tol['unit'] == 'Da':
-            # ToDo: implement Da tolerance - not high priority
-            raise Exception("Da fragment tolerance currently not supported")
-        else:
-            raise Exception("Unknown fragment tolerance unit: {}".format(frag_tol['unit']))
 
         pep_seqs = []
         for peptide_json in annotation_json['Peptides']:
@@ -221,14 +211,12 @@ class AnnotatedSpectrum:
 
         return match_peak, match_err
 
-    def match_unfragmented_precursor_peak(self, tolerance=None, deisotoped=False):
+    def match_unfragmented_precursor_peak(self, tolerance, deisotoped=False):
         """
         :param tolerance: error tolerance for matching (default fragment tolerance from annotation)
         :param deisotoped: deisotoping on/off
         :return: precursor peak, error
         """
-        tolerance = tolerance if tolerance is not None else self.fragment_tolerance
-
         precursor_mz = self.precursor['mz']
 
         return self.match_peak(precursor_mz, tolerance, deisotoped)
@@ -579,9 +567,16 @@ class Fragment:
         return self.peak.mz
 
     def get_error_ppm(self):
-        # ToDo: calc error if unit is Da
-        assert self.error['unit'] == 'ppm'
-        return self.error['value']
+        if self.error['unit'] == 'ppm':
+            return self.error['value']
+        else:
+            return None
+
+    def get_error_abs(self):
+        if self.error['unit'] == 'Da':
+            return self.error['value']
+        else:
+            return None
 
     @memoized_property
     def ion_type(self):
@@ -703,6 +698,7 @@ class Fragment:
             'calc_mz': self.calc_mz,
             'match_mz': self.get_mz(),
             'ppm': self.get_error_ppm(),
+            'error_abs': self.get_error_abs(),
             'charge': self.charge,
             'cluster_charge': self.cluster_charge,
             'seq': self.sequence,

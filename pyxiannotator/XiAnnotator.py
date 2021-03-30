@@ -19,11 +19,12 @@ class XiAnnotatorSuper:
             precursor_charge,
             precursor_mz,
             fragment_types=('peptide', 'b', 'y'),
-            fragment_tolerance_ppm=10.0,
+            fragment_tolerance_ppm=0.0,
+            fragment_tolerance_abs=0.0,
             cross_linker="BS3",
             custom_settings=False,
             as_dict=False,
-            modifications={}
+            modifications=None
     ):
         """
         Runs the Xi annotator to get the fragment annotation.
@@ -32,7 +33,8 @@ class XiAnnotatorSuper:
         :param precursor_charge:
         :param precursor_mz:
         :param fragment_types: ['peptide', 'a', 'b', 'c', 'x', 'y', 'z']
-        :param fragment_tolerance_ppm: (float) fragment tolerance in ppm to use
+        :param fragment_tolerance_ppm: (float) fragment tolerance in ppm
+        :param fragment_tolerance_abs: (float) fragment tolerance in Dalton
         :param cross_linker: either (str) cross-linker used or (float) cross-linker mod mass
         :param custom_settings: (list) custom_settings
         :param as_dict: (bool) returns request as dictionary instead of json
@@ -40,6 +42,8 @@ class XiAnnotatorSuper:
         :return: annotation request
         """
 
+        if modifications is None:
+            modifications = {}
         if type(cross_linker) is float:
             cross_linker_mod_mass = cross_linker
         else:
@@ -67,7 +71,15 @@ class XiAnnotatorSuper:
             'dssooh': 176.0143295
         }
         mod_mass_dict.update(modifications)
-        fragment_tolerance_ppm = str(fragment_tolerance_ppm)
+
+        if fragment_tolerance_ppm != 0 and fragment_tolerance_abs != 0:
+            raise ValueError('Give either fragment_tolerance_ppm or fragment_tolerance_abs')
+        if fragment_tolerance_ppm != 0:
+            frag_tolerance_val = str(fragment_tolerance_ppm)
+            frag_tolerance_unit = 'ppm'
+        else:
+            frag_tolerance_val = str(fragment_tolerance_abs)
+            frag_tolerance_unit = 'Da'
 
         all_mods = []
 
@@ -119,7 +131,7 @@ class XiAnnotatorSuper:
         ion_types = [{'type': ion.title() + 'Ion'} for ion in fragment_types]
 
         annotation_block = {
-            "fragmentTolerance": {"tolerance": fragment_tolerance_ppm, "unit": "ppm"},
+            "fragmentTolerance": {"tolerance": frag_tolerance_val, "unit": frag_tolerance_unit},
             "modifications": annotation_modifications,
             "ions": ion_types,
             "crosslinker": {"modMass": cross_linker_mod_mass},
