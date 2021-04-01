@@ -14,6 +14,12 @@ class AnnotatedSpectrum:
         self.isLinear = None
         self.peptide = None
 
+        self.base_peak = None
+        self.deisotoped_base_peak = None
+        self.intensity_sorted_peaks = None
+        self.intensity_sorted_deisotoped_peaks = None
+
+
     def _deisotope_peaks_(self):
         non_cluster_peaks = [p for p in self.peaks if len(p.cluster_ids) == 0]
 
@@ -168,9 +174,19 @@ class AnnotatedSpectrum:
         :param deisotoped: deisotoping on/off
         :return: base peak
         """
-        peaks = self.get_peaks(deisotoped=deisotoped)
-
-        base_peak = sorted(peaks, key=lambda k: k.intensity)[-1]
+        # check if base peak was already determined
+        if deisotoped and self.deisotoped_base_peak is not None:
+            base_peak = self.deisotoped_base_peak
+        elif not deisotoped and self.base_peak is not None:
+            base_peak = self.base_peak
+        else:
+            peaks = self.get_peaks(deisotoped=deisotoped)
+            base_peak = sorted(peaks, key=lambda k: k.intensity)[-1]
+            # save it
+            if deisotoped:
+                self.deisotoped_base_peak = base_peak
+            else:
+                self.base_peak = base_peak
 
         if as_list:
             return base_peak.as_list()
@@ -183,19 +199,16 @@ class AnnotatedSpectrum:
     def get_cluster_by_id(self, cluster_id):
         return self.clusters[cluster_id]
 
-    def match_peak(self, needle_mz, tolerance=None, deisotoped=False):
+    def match_peak(self, needle_mz, tolerance, deisotoped=False):
         """
         Find a peak in spectrum with a certain tolerance.
 
         (default fragment tolerance from annotation)
         :param needle_mz: needle m/z value
-        :param tolerance: error tolerance for matching (default fragment tolerance from annotation)
+        :param tolerance: relative error tolerance for matching
         :param deisotoped: deisotoping on/off
         :return: peak, error
         """
-
-        tolerance = tolerance if tolerance is not None else self.fragment_tolerance
-
         peaks = self.get_peaks(deisotoped=deisotoped)
 
         errors = [math.fabs(haystack_peak.match_error(needle_mz)) for haystack_peak in peaks]
@@ -252,9 +265,17 @@ class AnnotatedSpectrum:
         return summed_intensity
 
     def get_peak_rank(self, peak, deisotoped=False, as_list=False):
-        peaks = self.get_peaks(deisotoped=deisotoped, as_list=True)
-        peaks = sorted(peaks, key=lambda p: p[1], reverse=True)
-
+        if deisotoped:
+            if self.intensity_sorted_deisotoped_peaks is None:
+                peaks = self.get_peaks(deisotoped=True, as_list=True)
+                self.intensity_sorted_deisotoped_peaks = sorted(peaks, key=lambda p: p[1],
+                                                                reverse=True)
+            peaks = self.intensity_sorted_deisotoped_peaks
+        else:
+            if self.intensity_sorted_peaks is None:
+                peaks = self.get_peaks(deisotoped=False, as_list=True)
+                self.intensity_sorted_peaks = sorted(peaks, key=lambda p: p[1], reverse=True)
+            peaks = self.intensity_sorted_peaks
         if as_list:
             rank = peaks.index(peak) + 1
         else:
