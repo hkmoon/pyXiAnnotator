@@ -92,6 +92,17 @@ class AnnotatedSpectrum:
 
         self.deisotoped_peaks = self._deisotope_peaks_()
 
+        # get base peak (deisotoped and non deisotoped)
+        self.deisotoped_base_peak = sorted(self.deisotoped_peaks, key=lambda k: k.intensity)[-1]
+        self.base_peak = sorted(self.peaks, key=lambda k: k.intensity)[-1]
+
+        # intensity sorted peaks
+        deisotoped_peaks = self.get_peaks(deisotoped=True, as_list=True)
+        self.intensity_sorted_deisotoped_peaks = sorted(deisotoped_peaks, key=lambda p: p[1],
+                                                        reverse=True)
+        peaks = self.get_peaks(deisotoped=False, as_list=True)
+        self.intensity_sorted_peaks = sorted(peaks, key=lambda p: p[1], reverse=True)
+
         self.fragments = create_fragments(annotation_json)
 
         self.annotation_json = annotation_json
@@ -174,19 +185,10 @@ class AnnotatedSpectrum:
         :param deisotoped: deisotoping on/off
         :return: base peak
         """
-        # check if base peak was already determined
-        if deisotoped and self.deisotoped_base_peak is not None:
+        if deisotoped:
             base_peak = self.deisotoped_base_peak
-        elif not deisotoped and self.base_peak is not None:
-            base_peak = self.base_peak
         else:
-            peaks = self.get_peaks(deisotoped=deisotoped)
-            base_peak = sorted(peaks, key=lambda k: k.intensity)[-1]
-            # save it
-            if deisotoped:
-                self.deisotoped_base_peak = base_peak
-            else:
-                self.base_peak = base_peak
+            base_peak = self.base_peak
 
         if as_list:
             return base_peak.as_list()
@@ -266,16 +268,10 @@ class AnnotatedSpectrum:
 
     def get_peak_rank(self, peak, deisotoped=False, as_list=False):
         if deisotoped:
-            if self.intensity_sorted_deisotoped_peaks is None:
-                peaks = self.get_peaks(deisotoped=True, as_list=True)
-                self.intensity_sorted_deisotoped_peaks = sorted(peaks, key=lambda p: p[1],
-                                                                reverse=True)
             peaks = self.intensity_sorted_deisotoped_peaks
         else:
-            if self.intensity_sorted_peaks is None:
-                peaks = self.get_peaks(deisotoped=False, as_list=True)
-                self.intensity_sorted_peaks = sorted(peaks, key=lambda p: p[1], reverse=True)
             peaks = self.intensity_sorted_peaks
+
         if as_list:
             rank = peaks.index(peak) + 1
         else:
