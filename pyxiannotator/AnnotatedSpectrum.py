@@ -7,7 +7,8 @@ class AnnotatedSpectrum:
     def __init__(self):
         self.peaks = []
         self.clusters = []
-        self.deisotoped_peaks = []
+        self.deisotoped_sum_peaks = []
+        self.deisotoped_max_peaks = []
         self.fragments = []
         self.annotation_json = None
         self.precursor = {}
@@ -15,20 +16,28 @@ class AnnotatedSpectrum:
         self.peptide = None
 
         self.base_peak = None
-        self.deisotoped_base_peak = None
+        self.deisotoped_sum_base_peak = None
+        self.deisotoped_max_base_peak = None
         self.intensity_sorted_peaks = None
-        self.intensity_sorted_deisotoped_peaks = None
+        self.int_sorted_deisotoped_sum_peaks = None
+        self.int_sorted_deisotoped_max_peaks = None
 
+    def _deisotope_peaks_(self, deisotope_func):
+        """
+        Deisotope the peaks.
 
-    def _deisotope_peaks_(self):
+        :param deisotope_func: (str) function to use for deisotoped intensity.
+            Valid values: - 'sum': summed up cluster intensity
+                          - 'max': maximum peak intensity in the cluster
+        """
         non_cluster_peaks = [p for p in self.peaks if len(p.cluster_ids) == 0]
 
-        summed_cluster_peaks = [
-            Peak(cluster.get_first_peak().id, cluster.get_first_peak().mz, cluster.intensity, self,
-                 [cluster.id])
+        cluster_peaks = [
+            Peak(cluster.get_first_peak().id, cluster.get_first_peak().mz, cluster.get_intensity(deisotope_func),
+                 self, [cluster.id])
             for cluster in self.clusters]
 
-        deisotoped_peaks = non_cluster_peaks + summed_cluster_peaks
+        deisotoped_peaks = non_cluster_peaks + cluster_peaks
 
         return sorted(deisotoped_peaks, key=lambda k: k.mz)
 
@@ -90,16 +99,23 @@ class AnnotatedSpectrum:
             self.clusters.append(IsotopeCluster(i, cluster_peaks, cluster['charge']))
             cluster_index += 1
 
-        self.deisotoped_peaks = self._deisotope_peaks_()
+        self.deisotoped_sum_peaks = self._deisotope_peaks_(deisotope_func='sum')
+        self.deisotoped_max_peaks = self._deisotope_peaks_(deisotope_func='max')
 
         # get base peak (deisotoped and non deisotoped)
-        self.deisotoped_base_peak = sorted(self.deisotoped_peaks, key=lambda k: k.intensity)[-1]
+        self.deisotoped_sum_base_peak = sorted(self.deisotoped_sum_peaks,
+                                               key=lambda k: k.intensity)[-1]
+        self.deisotoped_max_base_peak = sorted(self.deisotoped_max_peaks,
+                                               key=lambda k: k.intensity)[-1]
         self.base_peak = sorted(self.peaks, key=lambda k: k.intensity)[-1]
 
         # intensity sorted peaks
-        deisotoped_peaks = self.get_peaks(deisotoped=True, as_list=True)
-        self.intensity_sorted_deisotoped_peaks = sorted(deisotoped_peaks, key=lambda p: p[1],
-                                                        reverse=True)
+        deisotoped_sum_peaks = self.get_peaks(deisotoped=True, as_list=True, deisotope_func='sum')
+        self.int_sorted_deisotoped_sum_peaks = sorted(deisotoped_sum_peaks, key=lambda p: p[1],
+                                                      reverse=True)
+        deisotoped_max_peaks = self.get_peaks(deisotoped=True, as_list=True, deisotope_func='max')
+        self.int_sorted_deisotoped_max_peaks = sorted(deisotoped_max_peaks, key=lambda p: p[1],
+                                                      reverse=True)
         peaks = self.get_peaks(deisotoped=False, as_list=True)
         self.intensity_sorted_peaks = sorted(peaks, key=lambda p: p[1], reverse=True)
 
@@ -158,7 +174,7 @@ class AnnotatedSpectrum:
         else:
             return fragments
 
-    def get_peaks(self, as_list=False, deisotoped=False):
+    def get_peaks(self, as_list=False, deisotoped=False, deisotope_func='sum'):
         """
         Get the peaks of the spectrum.
 
@@ -166,10 +182,18 @@ class AnnotatedSpectrum:
          to found clusters.
         :param as_list: return as list of [mz, int]
         :param deisotoped: deisotoping on/off
+        :param deisotope_func: (str) function to use for deisotoped intensity.
+            Valid values: - 'sum': summed up cluster intensity
+                          - 'max': maximum peak intensity in the cluster
         :return: spectrum peaks
         """
         if deisotoped:
-            peaks = self.deisotoped_peaks
+            if deisotope_func == 'sum':
+                peaks = self.deisotoped_sum_peaks
+            elif deisotope_func == 'max':
+                peaks = self.deisotoped_max_peaks
+            else:
+                raise ValueError(f'Unknown deisotope_func: {deisotope_func}')
         else:
             peaks = self.peaks
 
@@ -266,9 +290,14 @@ class AnnotatedSpectrum:
         summed_intensity = sum([self.peaks[j].intensity for j in unique_peak_ids])
         return summed_intensity
 
-    def get_peak_rank(self, peak, deisotoped=False, as_list=False):
+    def get_peak_rank(self, peak, deisotoped=False, deisotope_func='sum', as_list=False):
         if deisotoped:
-            peaks = self.intensity_sorted_deisotoped_peaks
+            if deisotope_func == 'sum':
+                peaks = self.int_sorted_deisotoped_sum_peaks
+            elif deisotope_func == 'max':
+                peaks = self.int_sorted_deisotoped_max_peaks
+            else:
+                raise ValueError(f'Unknown deisotope_func: {deisotope_func}')
         else:
             peaks = self.intensity_sorted_peaks
 
@@ -574,9 +603,18 @@ class Fragment:
         self.frag_type = frag_type
         self.charge = charge
 
-    def get_intensity(self, deisotoped=False):
+    def get_intensity(self, deisotoped=False, deisotope_func='sum'):
+        """
+        Return the intensity of the peak or cluster.
+
+        :param deisotoped: (bool) if True return the deisotoped intensity.
+        :param deisotope_func: (str) function to use for deisotoped intensity.
+            Valid values: - 'sum': summed up cluster intensity
+                          - 'max': maximum peak intensity in the cluster
+        :return:
+        """
         if deisotoped:
-            return self.cluster.intensity
+            return self.cluster.get_intensity(deisotope_func)
         else:
             return self.peak.intensity
 
@@ -705,11 +743,16 @@ class Fragment:
 
     def as_dict(self):
 
-        deisotoped_rank = self.spectrum.get_peak_rank(
-            [self.get_mz(), self.get_intensity(deisotoped=True)], deisotoped=True, as_list=True)
+        deisotoped_sum_rank = self.spectrum.get_peak_rank(
+            [self.get_mz(), self.get_intensity(deisotoped=True, deisotope_func='sum')],
+            deisotoped=True, deisotope_func='sum', as_list=True)
+        deisotoped_max_rank = self.spectrum.get_peak_rank(
+            [self.get_mz(), self.get_intensity(deisotoped=True, deisotope_func='max')],
+            deisotoped=True, deisotope_func='max', as_list=True)
         return {
             'intensity': self.get_intensity(),
-            'deisotoped_intensity': self.get_intensity(deisotoped=True),
+            'deisotoped_intensity_sum': self.get_intensity(deisotoped=True, deisotope_func='sum'),
+            'deisotoped_intensity_max': self.get_intensity(deisotoped=True, deisotope_func='max'),
             'name': self.name,
             'pep_id': self.peptide_id,
             'calc_mz': self.calc_mz,
@@ -726,7 +769,8 @@ class Fragment:
             'lossy': self.get_lossy(),
             'matched_missing_monoisotopic': self.missing_monoisotopic,
             'rank': self.get_rank(),
-            'deisotoped_rank': deisotoped_rank,
+            'deisotoped_sum_rank': deisotoped_sum_rank,
+            'deisotoped_max_rank': deisotoped_max_rank,
             'rel_int_base_peak': self.get_rel_int_base_peak(),
             # 'deisotoped_rel_int_base_peak': self.get_rel_int_base_peak(deisotoped=True),
             # 'rel_int_precursor': self.get_rel_int_precursor(),
@@ -753,11 +797,20 @@ class IsotopeCluster:
         self.charge = charge
 
     @memoized_property
-    def intensity(self):
+    def intensity_sum(self):
         return sum([p.intensity for p in self.peaks])
 
-    def get_intensity(self):
-        return self.intensity
+    @memoized_property
+    def intensity_max(self):
+        return max([p.intensity for p in self.peaks])
+
+    def get_intensity(self, deisotope_func):
+        if deisotope_func == 'sum':
+            return self.intensity_sum
+        elif deisotope_func == 'max':
+            return self.intensity_max
+        else:
+            raise ValueError(f'Unknown deisotope_func: {deisotope_func}')
 
     def get_charge(self):
         return self.charge
