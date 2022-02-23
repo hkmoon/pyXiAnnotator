@@ -1,6 +1,7 @@
 import re
 import math
 from memoized_property import memoized_property
+import numpy as np
 
 
 class AnnotatedSpectrum:
@@ -21,6 +22,10 @@ class AnnotatedSpectrum:
         self.intensity_sorted_peaks = None
         self.int_sorted_deisotoped_sum_peaks = None
         self.int_sorted_deisotoped_max_peaks = None
+
+        self.deisotoped_sum_ranks = None
+        self.deisotoped_max_ranks = None
+        self.ranks = None
 
     def _deisotope_peaks_(self, deisotope_func):
         """
@@ -111,13 +116,31 @@ class AnnotatedSpectrum:
 
         # intensity sorted peaks
         deisotoped_sum_peaks = self.get_peaks(deisotoped=True, as_list=True, deisotope_func='sum')
-        self.int_sorted_deisotoped_sum_peaks = sorted(deisotoped_sum_peaks, key=lambda p: p[1],
-                                                      reverse=True)
+        self.int_sorted_deisotoped_sum_peaks = sorted(deisotoped_sum_peaks, key=lambda p: p[1])
         deisotoped_max_peaks = self.get_peaks(deisotoped=True, as_list=True, deisotope_func='max')
-        self.int_sorted_deisotoped_max_peaks = sorted(deisotoped_max_peaks, key=lambda p: p[1],
-                                                      reverse=True)
+        self.int_sorted_deisotoped_max_peaks = sorted(deisotoped_max_peaks, key=lambda p: p[1])
         peaks = self.get_peaks(deisotoped=False, as_list=True)
-        self.intensity_sorted_peaks = sorted(peaks, key=lambda p: p[1], reverse=True)
+        self.intensity_sorted_peaks = sorted(peaks, key=lambda p: p[1])
+
+        # ranks
+        def calc_ranks(peak_list):
+            """
+            Calculate ranks of peaks (same intensity = same rank)
+            :param peak_list: list of Peak
+            :return: (ndarray) ranks
+            """
+            intensities = np.array([p.intensity for p in peak_list])
+            sorted_indices = np.argsort(intensities)
+            sorted_intensities = intensities[sorted_indices]
+            unique_intensities, indices, ranks = np.unique(sorted_intensities, return_index=True,
+                                                           return_inverse=True)
+            # ranks are the wrong way round - change this and convert to 1-based
+            ranks = ranks.max(initial=0) - ranks + 1
+            return ranks
+
+        self.deisotoped_sum_ranks = calc_ranks(self.deisotoped_sum_peaks)
+        self.deisotoped_max_ranks = calc_ranks(self.deisotoped_max_peaks)
+        self.ranks = calc_ranks(self.peaks)
 
         self.fragments = create_fragments(annotation_json)
 
@@ -210,7 +233,9 @@ class AnnotatedSpectrum:
         :return: base peak
         """
         if deisotoped:
-            base_peak = self.deisotoped_base_peak
+            # Fixme
+            raise NotImplementedError('deisotoped base peak not implemented')
+            # base_peak = self.deisotoped_base_peak
         else:
             base_peak = self.base_peak
 
@@ -294,18 +319,22 @@ class AnnotatedSpectrum:
         if deisotoped:
             if deisotope_func == 'sum':
                 peaks = self.int_sorted_deisotoped_sum_peaks
+                ranks = self.deisotoped_sum_ranks
             elif deisotope_func == 'max':
                 peaks = self.int_sorted_deisotoped_max_peaks
+                ranks = self.deisotoped_max_ranks
             else:
                 raise ValueError(f'Unknown deisotope_func: {deisotope_func}')
         else:
             peaks = self.intensity_sorted_peaks
+            ranks = self.ranks
 
         if as_list:
-            rank = peaks.index(peak) + 1
+            peak_idx = peaks.index(peak)
         else:
-            rank = peaks.index(peak.as_list()) + 1
+            peak_idx = peaks.index(peak.as_list())
 
+        rank = ranks[peak_idx]
         return rank
 
     def calculate_sequence_coverage(self, lossy=False):
