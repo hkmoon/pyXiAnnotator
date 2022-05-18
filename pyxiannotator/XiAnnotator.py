@@ -193,7 +193,10 @@ class XiAnnotatorLocal(XiAnnotatorSuper):
             os.environ['CLASSPATH'] = jar_path
 
         import jpype
-        jpype.startJVM(classpath=jar_path)
+
+        if not jpype.isJVMStarted():
+            jpype.startJVM(classpath=jar_path)
+
         self.JString = jpype.java.lang.String
         self.annotator = jpype.JPackage('org').rappsilber.xiAnnotator()
 
